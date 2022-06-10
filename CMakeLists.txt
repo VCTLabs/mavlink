@@ -1,3 +1,9 @@
+cmake_minimum_required (VERSION 2.8.2)
+
+if(POLICY CMP0094)
+    cmake_policy(SET CMP0094 NEW)
+endif()
+
 project (mavlink)
 
 if (NOT DEFINED MAVLINK_SOURCE_DIR)
@@ -5,7 +11,6 @@ if (NOT DEFINED MAVLINK_SOURCE_DIR)
 endif ()
 
 # settings
-cmake_minimum_required (VERSION 2.8.2)
 set(PROJECT_VERSION_MAJOR "1")
 set(PROJECT_VERSION_MINOR "0")
 set(PROJECT_VERSION_PATCH "9")
@@ -151,7 +156,7 @@ else()
 endif()
 message(STATUS "mavgen_EXECUTABLE: ${mavgen_EXECUTABLE}")
 
-macro(generateMavlink version definitions)
+macro(generateMavlink1 version definitions)
     foreach(definition ${definitions})
         set(targetName ${definition}-v${version})
         set(definitionAbsPath ${MAVLINK_SOURCE_DIR}/message_definitions/v1.0/${definition})
@@ -168,20 +173,48 @@ macro(generateMavlink version definitions)
     endforeach()
 endmacro()
 
+macro(generateMavlink2 version definitions)
+    foreach(definition ${definitions})
+        set(targetName ${definition}-v${version})
+        set(definitionAbsPath ${MAVLINK_SOURCE_DIR}/message_definitions/v1.0/${definition})
+        message(STATUS "processing: ${definitionAbsPath}")
+        add_custom_command( 
+            OUTPUT ${targetName}-stamp
+            COMMAND ${mavgen_EXECUTABLE} --lang=C++11
+                                         --wire-protocol=${version}
+                                         --output=include/v${version}
+                                         ${definitionAbsPath}
+            COMMAND touch ${targetName}-stamp
+        )
+        add_custom_target(${targetName} ALL DEPENDS ${targetName}-stamp)
+    endforeach()
+endmacro()
+
 # build
-set(v1.0Definitions
+set(COMMON_DEFS
     ASLUAV.xml
     ardupilotmega.xml
     common.xml
     matrixpilot.xml
     minimal.xml
-    paparazzi.xml
     python_array_test.xml
     test.xml
+)
+
+set(v1.0Definitions
+    "${COMMON_DEFS}"
+    paparazzi.xml
     ualberta.xml
     )
-generateMavlink("1.0" "${v1.0Definitions}")
-generateMavlink("2.0" "${v1.0Definitions}")
+
+set(v2.0Definitions
+    "${COMMON_DEFS}"
+    development.xml
+    standard.xml
+)
+
+generateMavlink1("1.0" "${v1.0Definitions}")
+generateMavlink2("2.0" "${v2.0Definitions}")
 
 # testing
 if (BUILD_TEST)
@@ -196,6 +229,14 @@ endif()
 install(DIRECTORY ${CMAKE_BINARY_DIR}/include/ DESTINATION include/${PROJECT_NAME} COMPONENT Dev FILES_MATCHING PATTERN "*.h*")
 install(DIRECTORY ${CMAKE_BINARY_DIR}/src/ DESTINATION share/${PROJECT_NAME} COMPONENT Dev FILES_MATCHING PATTERN "*.c*")
 install(DIRECTORY ${MAVLINK_SOURCE_DIR}/share/${PROJECT_NAME} DESTINATION share COMPONENT Dev FILES_MATCHING PATTERN "*.c*")
+
+file(GLOB MSG_DEFS ${MAVLINK_SOURCE_DIR}/message_definitions/v1.0/*.xml)
+install(
+    FILES ${MSG_DEFS}
+    DESTINATION include/${PROJECT_NAME}/v2.0/message_definitions/v1.0/
+    COMPONENT Dev
+)
+
 if (UNIX)
     install(DIRECTORY ${MAVLINK_SOURCE_DIR}/pymavlink DESTINATION ${PYTHON_SITELIB} COMPONENT Dev)
 else ()
