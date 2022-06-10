@@ -156,7 +156,7 @@ else()
 endif()
 message(STATUS "mavgen_EXECUTABLE: ${mavgen_EXECUTABLE}")
 
-macro(generateMavlink version definitions)
+macro(generateMavlink1 version definitions)
     foreach(definition ${definitions})
         set(targetName ${definition}-v${version})
         set(definitionAbsPath ${MAVLINK_SOURCE_DIR}/message_definitions/v1.0/${definition})
@@ -164,6 +164,23 @@ macro(generateMavlink version definitions)
         add_custom_command( 
             OUTPUT ${targetName}-stamp
             COMMAND ${mavgen_EXECUTABLE} --lang=C
+                                         --wire-protocol=${version}
+                                         --output=include/v${version}
+                                         ${definitionAbsPath}
+            COMMAND touch ${targetName}-stamp
+        )
+        add_custom_target(${targetName} ALL DEPENDS ${targetName}-stamp)
+    endforeach()
+endmacro()
+
+macro(generateMavlink2 version definitions)
+    foreach(definition ${definitions})
+        set(targetName ${definition}-v${version})
+        set(definitionAbsPath ${MAVLINK_SOURCE_DIR}/message_definitions/v1.0/${definition})
+        message(STATUS "processing: ${definitionAbsPath}")
+        add_custom_command( 
+            OUTPUT ${targetName}-stamp
+            COMMAND ${mavgen_EXECUTABLE} --lang=C++11
                                          --wire-protocol=${version}
                                          --output=include/v${version}
                                          ${definitionAbsPath}
@@ -196,8 +213,8 @@ set(v2.0Definitions
     standard.xml
 )
 
-generateMavlink("1.0" "${v1.0Definitions}")
-generateMavlink("2.0" "${v2.0Definitions}")
+generateMavlink1("1.0" "${v1.0Definitions}")
+generateMavlink2("2.0" "${v2.0Definitions}")
 
 # testing
 if (BUILD_TEST)
@@ -216,7 +233,7 @@ install(DIRECTORY ${MAVLINK_SOURCE_DIR}/share/${PROJECT_NAME} DESTINATION share 
 file(GLOB MSG_DEFS ${MAVLINK_SOURCE_DIR}/message_definitions/v1.0/*.xml)
 install(
     FILES ${MSG_DEFS}
-    DESTINATION include/${PROJECT_NAME}/v2.0/message_definitions/
+    DESTINATION include/${PROJECT_NAME}/v2.0/message_definitions/v1.0/
     COMPONENT Dev
 )
 
