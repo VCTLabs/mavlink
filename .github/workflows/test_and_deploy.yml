@@ -79,7 +79,7 @@ jobs:
     name: Generate and push C headers
     needs: [format, python-tests, node-tests]
     runs-on: ubuntu-20.04
-    if: github.ref == 'refs/heads/master'
+    if: github.ref == 'refs/heads/master' && github.actor == github.repository_owner
     env:
       GH_TOKEN: ${{ secrets.GH_TOKEN }}
     steps:
