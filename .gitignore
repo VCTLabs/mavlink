@@ -9,6 +9,7 @@ install/
 .nfs*
 share/
 __pycache__
+message_definitions/v1.0/sionyx.xml
 pymavlink/generator/C/
 pymavlink/generator/C/
 pymavlink/generator/python/
