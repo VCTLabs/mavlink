@@ -191,6 +191,10 @@ macro(generateMavlink2 version definitions)
 endmacro()
 
 # build
+set(CUSTOM_DEFS
+    sionyx.xml
+)
+
 set(COMMON_DEFS
     ASLUAV.xml
     ardupilotmega.xml
@@ -203,12 +207,14 @@ set(COMMON_DEFS
 
 set(v1.0Definitions
     "${COMMON_DEFS}"
+    "${CUSTOM_DEFS}"
     paparazzi.xml
     ualberta.xml
     )
 
 set(v2.0Definitions
     "${COMMON_DEFS}"
+    "${CUSTOM_DEFS}"
     development.xml
     standard.xml
 )
